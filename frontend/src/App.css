@@ -1,0 +1,159 @@
+/* =======================
+   App container
+======================= */
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #181c24;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px #00000040;
+  padding: 32px;
+  color: #fff;
+  font-family: "Fira Mono", "Consolas", monospace;
+}
+
+/* =======================
+   Title
+======================= */
+.title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+}
+
+/* =======================
+   Language Tabs (Columns)
+======================= */
+.language-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 36px;            /* 🔥 MORE space between tabs */
+  margin-bottom: 28px;
+}
+
+.language-tab {
+  padding: 12px 28px;   /* more internal spacing */
+  border-radius: 12px;
+  background: #23272f;
+  color: #ddd;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.language-tab:hover {
+  background: #2f3542;
+}
+
+.language-tab.active {
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  color: #fff;
+  /*box-shadow: 0 0 0 2px #6d7ce0 inset;*/
+}
+
+/* =======================
+   File upload
+======================= */
+.file-upload {
+  display: block;
+  margin: 0 auto 16px auto;
+  background: #23272f;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+/* =======================
+   Analyze button
+======================= */
+.analyze-btn {
+  display: block;
+  margin: 24px auto 0 auto;
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  color: #fff;
+  border: none;
+  padding: 14px 36px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.analyze-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+}
+
+/* =======================
+   Results container
+======================= */
+.results {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =======================
+   Common result block
+======================= */
+.result-block {
+  background: #23272f;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* =======================
+   ERROR section
+======================= */
+.result-block.error h3 {
+  color: #ff6b6b;
+}
+.result-block.error pre {
+  background: #2a0000;
+  color: #ffaaaa;
+}
+
+/* =======================
+   HINT section
+======================= */
+.result-block.hint h3 {
+  color: #feca57;
+}
+.result-block.hint p {
+  color: #ffeaa7;
+}
+
+/* =======================
+   SOLUTION section
+======================= */
+.result-block.solution h3 {
+  color: #1dd1a1;
+}
+.result-block.solution pre {
+  background: #002b00;
+  color: #a3e4d7;
+}
+
+/* =======================
+   TIPS section
+======================= */
+.result-block.tips h3 {
+  color: #54a0ff;
+}
+.result-block.tips li {
+  color: #a3c9ff;
+}
+
+/* =======================
+   Code blocks
+======================= */
+.result-block pre {
+  padding: 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
