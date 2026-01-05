@@ -89,11 +89,11 @@ Please select the correct language (CPP) before analysis.
 
 ## 🎯 Design Decisions
 
-1.Monaco Editor is used in uncontrolled mode to prevent editor resets
-2.Language validation is enforced before analysis
-3.Each language has its own dedicated analyzer
-4.Generic or misleading fixes are avoided
-5.UX inspired by real IDEs such as VS Code
+1. Monaco Editor is used in uncontrolled mode to prevent editor resets
+2. Language validation is enforced before analysis
+3. Each language has its own dedicated analyzer
+4. Generic or misleading fixes are avoided
+5. UX inspired by real IDEs such as VS Code
 
 ## 🚀 Future Enhancements
 
