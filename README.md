@@ -53,7 +53,7 @@ ai-bug-finder/
 │       └── index.js
 │
 └── README.md
-
+```
 ## 🔍 How It Works
 
 1. User selects a programming language
