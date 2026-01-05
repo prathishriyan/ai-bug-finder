@@ -75,12 +75,14 @@ ai-bug-finder/
 #include<iostream>
 using namespace std;
 cout << "Hello";
-
+```
 Selected Language: Python
 
 output:
+```
 ❌ Error (LANG001)
 This code appears to be CPP code, not PYTHON.
+```
 
 💡 Hint
 Please select the correct language (CPP) before analysis.
