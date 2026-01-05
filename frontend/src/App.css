@@ -30,6 +30,7 @@
   justify-content: center;
   gap: 36px;            /* 🔥 MORE space between tabs */
   margin-bottom: 28px;
+  flex-wrap: wrap;
 }
 
 .language-tab {
@@ -41,6 +42,7 @@
   font-weight: 600;
   user-select: none;
   transition: all 0.2s ease;
+  white-space: nowrap; 
 }
 
 .language-tab:hover {
@@ -156,4 +158,26 @@
   border-radius: 8px;
   white-space: pre-wrap;
   overflow-x: auto;
+}
+
+.file-upload-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.file-label {
+  background: #23272f;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.file-name {
+  color: #9ca3af;
+  font-size: 0.9rem;
 }

@@ -2,21 +2,50 @@ from analyzers.python_analyzer import review_with_llm as analyze_python
 from analyzers.javascript_analyzer import review_with_llm as analyze_javascript
 from analyzers.java_analyzer import review_with_llm as analyze_java
 from analyzers.c_analyzer import review_with_llm as analyze_c
+from language_detector import detect_language
+
 
 def analyze_by_language(language: str, code: str):
-    language = language.lower()
+    selected = language.lower()
+    detected = detect_language(code)
 
-    if language == "python":
+    # 🔴 HARD STOP: language mismatch
+    if detected != "unknown" and detected != selected:
+        return {
+            "errors": [
+                {
+                    "line": 1,
+                    "message": f"This code appears to be {detected.upper()} code, not {selected.upper()}",
+                    "severity": "ERROR",
+                    "code": "LANG001"
+                }
+            ],
+            "warnings": [],
+            "hint": f"Please select the correct language ({detected.upper()}) before analysis.",
+            "solution": "",
+            "additional_tips": ""
+        }
+
+    # ✅ Language matches → analyze
+    if selected == "python":
         return analyze_python(code)
-    elif language == "javascript":
+    elif selected == "javascript":
         return analyze_javascript(code)
-    elif language == "java":
+    elif selected == "java":
         return analyze_java(code)
-    elif language == "c":
+    elif selected == "c":
         return analyze_c(code)
     else:
         return {
-            "error": f"Unsupported language: {language}",
+            "errors": [
+                {
+                    "line": 1,
+                    "message": f"Unsupported language selected: {selected}",
+                    "severity": "ERROR",
+                    "code": "LANG002"
+                }
+            ],
+            "warnings": [],
             "hint": "",
             "solution": "",
             "additional_tips": ""

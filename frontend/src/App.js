@@ -7,7 +7,16 @@ const LANGUAGES = [
   { key: "javascript", label: "JavaScript" },
   { key: "java", label: "Java" },
   { key: "c", label: "C" },
+  { key: "cpp", label: "C++" },
 ];
+
+const DEFAULT_CODE = {
+  python: "# Start typing your Python code here\n",
+  javascript: "// Start typing your JavaScript code here\n",
+  java: "// Start typing your Java code here\n",
+  c: "// Start typing your C code here\n",
+  cpp: "// Start typing your C++ code here\n",
+};
 
 function App() {
   const editorRef = useRef(null);
@@ -15,18 +24,45 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState("python");
 
+  const [fileName, setFileName] = useState("");
+  const [codeByLanguage, setCodeByLanguage] = useState({
+    python: "",
+    javascript: "",
+    java: "",
+    c: "",
+    cpp: "",
+  });
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
+  
     const reader = new FileReader();
+  
     reader.onload = (e) => {
+      const content = e.target.result;
+  
+      // Save code for current language
+      setCodeByLanguage((prev) => ({
+        ...prev,
+        [language]: content,
+      }));
+  
+      // Update editor
       if (editorRef.current) {
-        editorRef.current.setValue(e.target.result);
+        editorRef.current.setValue(content);
       }
+  
+      // Update filename
+      setFileName(file.name);
     };
+  
     reader.readAsText(file);
+  
+    // IMPORTANT: allow selecting same file again
+    event.target.value = "";
   };
+  
 
   function handleEditorDidMount(editor) {
     editorRef.current = editor;
@@ -69,27 +105,49 @@ function App() {
             className={`language-tab ${language === lang.key ? "active" : ""}`}
 
 
-            onClick={() => setLanguage(lang.key)}
+            onClick={() => {
+              // Save current editor code
+              if (editorRef.current) {
+                const currentCode = editorRef.current.getValue();
+                setCodeByLanguage((prev) => ({
+                  ...prev,
+                  [language]: currentCode,
+                }));
+              }
+            
+              // Switch language
+              setLanguage(lang.key);
+            
+              // Restore code for selected language
+              setTimeout(() => {
+                if (editorRef.current) {
+                  editorRef.current.setValue(codeByLanguage[lang.key] || "");
+                }
+              }, 0);
+            }}
+            
           >
             {lang.label}
           </div>
         ))}
       </div>
 
-      <input
-        className="file-upload"
-        type="file"
-        accept=".py,.js,.java,.c,.cpp,.txt"
-        onChange={handleFileUpload}
-      />
+      <div className="file-upload-wrapper">
+        <label className="file-label">
+          Choose File
+        <input type="file" accept=".py,.js,.java,.c,.cpp,.txt" onChange={handleFileUpload} hidden />
+      </label>
 
-      <Editor
-        height="50vh"
-        language={language}
-        defaultValue="# Type your code here"
-        onMount={handleEditorDidMount}
-        theme="vs-dark"
-      />
+      {fileName && <span className="file-name">{fileName}</span>}
+    </div>
+
+    <Editor
+      height="50vh"
+      language={language}
+      theme="vs-dark"
+      onMount={handleEditorDidMount}
+    />
+
 
       <button
         className="analyze-btn"
