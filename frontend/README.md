@@ -71,7 +71,6 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 ### to run backend
 
-uvicorn main:app --reload --port 9000
 
 ### to run ollama
 
