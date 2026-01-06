@@ -2,6 +2,8 @@ import React, { useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import "./App.css";
 
+/* ---------------- Language Config ---------------- */
+
 const LANGUAGES = [
   { key: "python", label: "Python" },
   { key: "javascript", label: "JavaScript" },
@@ -11,20 +13,21 @@ const LANGUAGES = [
 ];
 
 const DEFAULT_CODE = {
-  python: "# Start typing your Python code here\n",
-  javascript: "// Start typing your JavaScript code here\n",
-  java: "// Start typing your Java code here\n",
-  c: "// Start typing your C code here\n",
-  cpp: "// Start typing your C++ code here\n",
+  python: "# Write Python code here\n",
+  javascript: "// Write JavaScript code here\n",
+  java: "// Write Java code here\n",
+  c: "// Write C code here\n",
+  cpp: "// Write C++ code here\n",
 };
 
 function App() {
   const editorRef = useRef(null);
+
+  const [language, setLanguage] = useState("python");
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState("python");
-
   const [fileName, setFileName] = useState("");
+
   const [codeByLanguage, setCodeByLanguage] = useState({
     python: "",
     javascript: "",
@@ -33,167 +36,209 @@ function App() {
     cpp: "",
   });
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+  /* ---------------- Editor Mount ---------------- */
+
+  function handleEditorDidMount(editor) {
+    editorRef.current = editor;
+    editor.setValue(DEFAULT_CODE[language]);
+  }
+
+  /* ---------------- File Load ---------------- */
+
+  const loadFileToEditor = (file) => {
     if (!file) return;
-  
+
+    setFileName(file.name);
+
     const reader = new FileReader();
-  
     reader.onload = (e) => {
       const content = e.target.result;
-  
-      // Save code for current language
+
       setCodeByLanguage((prev) => ({
         ...prev,
         [language]: content,
       }));
-  
-      // Update editor
-      if (editorRef.current) {
-        editorRef.current.setValue(content);
-      }
-  
-      // Update filename
-      setFileName(file.name);
-    };
-  
-    reader.readAsText(file);
-  
-    // IMPORTANT: allow selecting same file again
-    event.target.value = "";
-  };
-  
 
-  function handleEditorDidMount(editor) {
-    editorRef.current = editor;
-  }
+      editorRef.current?.setValue(content);
+    };
+
+    reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e) => {
+    loadFileToEditor(e.target.files[0]);
+    e.target.value = "";
+  };
+
+  /* ---------------- Drag & Drop ---------------- */
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    loadFileToEditor(e.dataTransfer.files[0]);
+  };
+
+  const handleDragOver = (e) => e.preventDefault();
+
+  /* ---------------- Analyze ---------------- */
 
   const handleAnalyze = async () => {
     setLoading(true);
-    const code = editorRef.current ? editorRef.current.getValue() : "";
+
+    const code = editorRef.current?.getValue() || "";
 
     try {
       const response = await fetch("http://localhost:9000/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language: language,
-          code: code,
-        }),
+        body: JSON.stringify({ language, code }),
       });
 
       const data = await response.json();
       setAnalysisResult(data);
-    } catch (error) {
+    } catch (err) {
       setAnalysisResult({
-        error: "Failed to analyze code: " + error.message,
+        errors: [
+          {
+            line: 0,
+            message: err.message,
+            severity: "ERROR",
+            code: "NET001",
+          },
+        ],
+        warnings: [],
       });
     }
 
     setLoading(false);
   };
 
+  /* ---------------- UI ---------------- */
+
   return (
     <div className="container">
       <h1 className="title">🪲 AI Bug Finder</h1>
 
-      {/* Language Tabs */}
+      {/* -------- Language Tabs -------- */}
       <div className="language-tabs">
         {LANGUAGES.map((lang) => (
           <div
             key={lang.key}
-            className={`language-tab ${language === lang.key ? "active" : ""}`}
-
-
+            className={`language-tab ${
+              language === lang.key ? "active" : ""
+            }`}
             onClick={() => {
-              // Save current editor code
               if (editorRef.current) {
-                const currentCode = editorRef.current.getValue();
                 setCodeByLanguage((prev) => ({
                   ...prev,
-                  [language]: currentCode,
+                  [language]: editorRef.current.getValue(),
                 }));
               }
-            
-              // Switch language
+
               setLanguage(lang.key);
-            
-              // Restore code for selected language
+
               setTimeout(() => {
-                if (editorRef.current) {
-                  editorRef.current.setValue(codeByLanguage[lang.key] || "");
-                }
+                editorRef.current?.setValue(
+                  codeByLanguage[lang.key] || DEFAULT_CODE[lang.key]
+                );
               }, 0);
             }}
-            
           >
             {lang.label}
           </div>
         ))}
       </div>
 
-      <div className="file-upload-wrapper">
-        <label className="file-label">
-          Choose File
-        <input type="file" accept=".py,.js,.java,.c,.cpp,.txt" onChange={handleFileUpload} hidden />
-      </label>
+      {/* -------- Drop Zone -------- */}
+      <div className="drop-zone" onDrop={handleDrop} onDragOver={handleDragOver}>
+        <div className="drop-content">
+          <span className="drop-icon">📂</span>
+          <p className="drop-text">
+            Drag & drop a file here <span>or</span>
+          </p>
 
-      {fileName && <span className="file-name">{fileName}</span>}
-    </div>
+          <label className="file-button">
+            Browse files
+            <input
+              type="file"
+              accept=".py,.js,.java,.c,.cpp,.txt"
+              hidden
+              onChange={handleFileUpload}
+            />
+          </label>
 
-    <Editor
-      height="50vh"
-      language={language}
-      theme="vs-dark"
-      onMount={handleEditorDidMount}
-    />
+          {fileName && <div className="file-name">📄 {fileName}</div>}
+        </div>
+      </div>
 
+      {/* -------- Editor -------- */}
+      <Editor
+        height="50vh"
+        language={language}
+        theme="vs-dark"
+        onMount={handleEditorDidMount}
+      />
 
-      <button
-        className="analyze-btn"
-        onClick={handleAnalyze}
-        disabled={loading}
-      >
+      {/* -------- Analyze -------- */}
+      <button className="analyze-btn" onClick={handleAnalyze} disabled={loading}>
         {loading ? "Analyzing..." : "Analyze"}
       </button>
 
+      {/* -------- Results -------- */}
       {analysisResult && (
-        <div className="results">
-          {analysisResult.error && (
-            <div className="result-block error">
-              <h3>❌ Error</h3>
-              <pre>{analysisResult.error}</pre>
-            </div>
-          )}
+  <div className="results">
+    {analysisResult.errors?.length > 0 && (
+      <div className="result-block error">
+        <h3>❌ Errors</h3>
+        <pre>
+          {analysisResult.errors
+            .map(
+              (e) => `Line ${e.line}: ${e.message} (${e.code})`
+            )
+            .join("\n")}
+        </pre>
+      </div>
+    )}
 
-          {analysisResult.hint && (
-            <div className="result-block hint">
-              <h3>💡 Hint</h3>
-              <p>{analysisResult.hint}</p>
-            </div>
-          )}
+    {analysisResult.warnings?.length > 0 && (
+      <div className="result-block hint">
+        <h3>⚠️ Warnings</h3>
+        <pre>
+          {analysisResult.warnings
+            .map(
+              (w) => `Line ${w.line}: ${w.message} (${w.code})`
+            )
+            .join("\n")}
+        </pre>
+      </div>
+    )}
 
-          {analysisResult.solution && (
-            <div className="result-block solution">
-              <h3>✅ Solution</h3>
-              <pre>{analysisResult.solution}</pre>
-            </div>
-          )}
+    {analysisResult.hint && (
+      <div className="result-block hint">
+        <h3>💡 Hint</h3>
+        <p>{analysisResult.hint}</p>
+      </div>
+    )}
 
-          {analysisResult.additional_tips && (
-            <div className="result-block tips">
-              <h3>📌 Additional Tips</h3>
-              <ul>
-                {analysisResult.additional_tips
-                  .split("\n")
-                  .map((tip, i) => (
-                    <li key={i}>{tip.replace(/^-\s*/, "")}</li>
-                  ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
+    {analysisResult.solution && (
+      <div className="result-block solution">
+        <h3>✅ Solution</h3>
+        <pre>
+    {analysisResult.solution
+      ? analysisResult.solution
+      : "No auto-fix available. Resolve the errors above first."}
+  </pre>
+      </div>
+    )}
+
+    {analysisResult.additional_tips && (
+      <div className="result-block tips">
+        <h3>📌 Additional Tips</h3>
+        <pre>{analysisResult.additional_tips}</pre>
+      </div>
+    )}
+  </div>
+)}
+
     </div>
   );
 }

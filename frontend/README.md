@@ -76,3 +76,45 @@ uvicorn main:app --reload --port 9000
 ### to run ollama
 
 ollama pull phi
+
+###push to git
+
+1.Check git status
+git status
+
+2. add all changes
+git add .
+
+3.Commit your changes
+git commit -m "Fix Monaco editor state, file upload, and C++ language support"
+
+
+4.Push to GitHub
+git push origin main
+
+or if master?
+git push origin master
+
+
+
+
+FIRST TIME PUSH (repo exists but not linked)
+🔹 Step 1: Initialize git (if needed)
+git init
+
+🔹 Step 2: Add remote repository
+
+(copy URL from GitHub → Code → HTTPS)
+
+git remote add origin https://github.com/USERNAME/REPO_NAME.git
+
+
+Verify:
+
+git remote -v
+
+🔹 Step 3: Add, commit, push
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git push -u origin main

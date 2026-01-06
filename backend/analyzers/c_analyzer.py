@@ -1,113 +1,78 @@
 import re
 import requests
 import json
-from llm.llm_explainer import parse_llm_sections
-
-# ======================================================
-# DEFINITE ERRORS
-# ======================================================
 
 def static_c_errors(code: str):
     errors = []
-    lines = code.splitlines()
 
     if "main(" not in code:
-        errors.append("Error: C program must contain main() function")
+        errors.append("Line 1: Missing main() function")
 
-    if "printf(" in code and "#include <stdio.h>" not in code:
-        errors.append("Error: Missing #include <stdio.h>")
+    for i, line in enumerate(code.splitlines()):
+        if re.match(r".*[^;{}\s]$", line) and not line.strip().startswith("#"):
+            errors.append(f"Line {i+1}: Missing semicolon")
 
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-
-        # print instead of printf
-        if stripped.startswith("print("):
-            errors.append(
-                f"Line {i+1}: {line}\n"
-                f"       ^^^ Error: 'print' is not valid in C (use printf)"
-            )
-
-        # Missing semicolon
-        if (
-            stripped.endswith(")")
-            and not stripped.endswith(");")
-            and not stripped.startswith(("if", "for", "while"))
-        ):
-            errors.append(
-                f"Line {i+1}: {line}\n"
-                f"       ^^^ Error: Missing semicolon"
-            )
+    if code.count("{") != code.count("}"):
+        errors.append("Opening brace '{' not closed")
 
     return errors
 
 
-# ======================================================
-# POSSIBLE ISSUES
-# ======================================================
-
-def possible_c_issues(code: str):
-    issues = []
-    lines = code.splitlines()
-
-    for i, line in enumerate(lines):
-        # Unsafe functions
-        if re.search(r"\bgets\(", line):
-            issues.append(
-                f"Line {i+1}: 'gets()' is unsafe; use fgets() instead"
-            )
-
-        # Uninitialized variables
-        if re.search(r"\bint\s+\w+;\b", line):
-            issues.append(
-                f"Line {i+1}: Variable declared but not initialized"
-            )
-
-    return issues
-
-
-# ======================================================
-# LLM EXPLANATION
-# ======================================================
-
 def review_with_llm(code: str):
-    definite = static_c_errors(code)
-    possible = possible_c_issues(code)
+    errors = static_c_errors(code)
 
-    if not definite:
+    if not errors:
         return {
-            "error": "No definite errors found.",
-            "hint": "Your C code is structurally correct.",
-            "solution": code,
-            "additional_tips": "- Follow C best practices.",
-            "possible_issues": "\n".join(possible) if possible else ""
+            "errors": [],
+            "warnings": [],
+            "hint": "No errors found. Your C code is correct.",
+            "solution": "",
+            "additional_tips": ""
         }
 
-    error_block = "\n".join(definite)
+    prompt = f"""
+You are a C systems programmer.
+
+RULES (MANDATORY):
+- Do NOT use assignment inside if conditions
+- open() success must be checked using < 0
+- Use permission 0644 for created files
+- Preserve original logic
+- Only fix errors, do NOT refactor
+
+Return ONLY corrected C code.
+
+Original Code:
+{code}
+"""
 
     response = requests.post(
         "http://localhost:11434/api/generate",
-        json={
-            "model": "phi",
-            "prompt": f"""
-You are a senior C programming instructor.
-
-Errors:
-{error_block}
-
-TASK:
-Explain fixes and provide corrected C code.
-""",
-            "options": {"temperature": 0}
-        },
+        json={"model": "phi", "prompt": prompt, "options": {"temperature": 0}},
         stream=True
     )
 
-    llm_text = ""
+    fixed_code = ""
     for line in response.iter_lines():
         if line:
-            llm_text += json.loads(line.decode()).get("response", "")
+            fixed_code += json.loads(line.decode())["response"]
 
-    result = parse_llm_sections(error_block, llm_text)
-    result["possible_issues"] = "\n".join(possible)
+    return {
+        "errors": [{"line": 0, "message": e, "severity": "ERROR", "code": "C001"} for e in errors],
+        "warnings": [],
+        "hint": "Fix the C syntax errors shown above before compilation.",
+        "solution":"""
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 
-    return result
+int main() {
+    // corrected template
+}
+""",
+        "additional_tips": (
+            "- Every statement must end with a semicolon\n"
+            "- All opened braces must be closed\n"
+            "- Ensure required headers are included"
+        )
+    }

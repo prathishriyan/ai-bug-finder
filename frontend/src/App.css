@@ -125,8 +125,13 @@
 .result-block.hint h3 {
   color: #feca57;
 }
-.result-block.hint p {
-  color: #ffeaa7;
+.result-block.hint p,
+.result-block.hint pre {
+  background: rgb(73, 73, 42);
+  color: #ffe28a;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-family: "Fira Mono", monospace;
 }
 
 /* =======================
@@ -136,9 +141,13 @@
   color: #1dd1a1;
 }
 .result-block.solution pre {
-  background: #002b00;
-  color: #a3e4d7;
+  background: rgb(27, 62, 27);
+  color: #9ff0c8;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-family: "Fira Mono", monospace;
 }
+
 
 /* =======================
    TIPS section
@@ -146,8 +155,12 @@
 .result-block.tips h3 {
   color: #54a0ff;
 }
-.result-block.tips li {
-  color: #a3c9ff;
+.result-block.tips pre {
+  background: rgb(57, 91, 99);
+  color: #9ad9ff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-family: "Fira Mono", monospace;
 }
 
 /* =======================
@@ -181,3 +194,62 @@
   color: #9ca3af;
   font-size: 0.9rem;
 }
+
+/* =======================
+   Drag & Drop Upload
+======================= */
+.drop-zone {
+  border: 2px dashed #3a3f4b;
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+  background: #1f232b;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.drop-zone:hover {
+  border-color: #00c6ff;
+  background: #23272f;
+}
+
+.drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.drop-icon {
+  font-size: 1.6rem;
+}
+
+.drop-text {
+  font-size: 0.95rem;
+  color: #bbb;
+}
+
+.drop-text span {
+  color: #777;
+}
+
+.file-button {
+  margin-top: 4px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: #2d333f;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.file-button:hover {
+  background: #3b4252;
+}
+
+.file-name {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #00c6ff;
+}
+
