@@ -87,7 +87,7 @@ function App() {
     const code = editorRef.current?.getValue() || "";
 
     try {
-      const response = await fetch("http://localhost:9000/analyze", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ language, code }),

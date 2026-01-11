@@ -8,9 +8,9 @@ load_dotenv()
 
 app = FastAPI()
 
-# -------------------- CORS --------------------
+# ----------- --------- CORS --------------------
 
-app.add_middleware(
+app.add_middleware(    
     CORSMiddleware,
     allow_origins=["*"],  # Restrict in production
     allow_credentials=True,
