@@ -1,19 +1,29 @@
 import re
 import requests
 import json
+import os
+
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 
 def static_c_errors(code: str):
     errors = []
+    lines = code.splitlines()
 
-    if "main(" not in code:
-        errors.append("Line 1: Missing main() function")
+    for i, line in enumerate(lines):
+        stripped = line.strip()
 
-    for i, line in enumerate(code.splitlines()):
-        if re.match(r".*[^;{}\s]$", line) and not line.strip().startswith("#"):
+        if stripped.startswith("#") or stripped.startswith("//") or stripped == "":
+            continue
+
+        if (
+            not stripped.endswith(";")
+            and not stripped.endswith("{")
+            and not stripped.endswith("}")
+        ):
             errors.append(f"Line {i+1}: Missing semicolon")
 
     if code.count("{") != code.count("}"):
-        errors.append("Opening brace '{' not closed")
+        errors.append("Mismatched braces")
 
     return errors
 
@@ -25,54 +35,61 @@ def review_with_llm(code: str):
         return {
             "errors": [],
             "warnings": [],
-            "hint": "No errors found. Your C code is correct.",
+            "hint": "No errors detected.",
             "solution": "",
             "additional_tips": ""
         }
+    error_block = "\n".join(errors)
 
     prompt = f"""
-You are a C systems programmer.
+Act as a senior C compiler expert.
 
-RULES (MANDATORY):
-- Do NOT use assignment inside if conditions
-- open() success must be checked using < 0
-- Use permission 0644 for created files
-- Preserve original logic
-- Only fix errors, do NOT refactor
+Your task is to fix ONLY syntax errors in the C code.
 
-Return ONLY corrected C code.
+STRICT RULES:
+- Do NOT add new logic
+- Do NOT change variable names
+- Do NOT add comments
+- Do NOT rewrite or refactor
+- Do NOT remove includes
+- Only fix missing semicolons, braces, parentheses
+- Return ONLY corrected C code
 
-Original Code:
+Errors:
+{error_block}
+
+Code:
 {code}
+
+Return only corrected C code with NO explanations.
 """
 
     response = requests.post(
-        "http://localhost:11434/api/generate",
-        json={"model": "phi", "prompt": prompt, "options": {"temperature": 0}},
+        f"{OLLAMA_URL}/api/generate",
+        json={"model": "phi3:latest", "prompt": prompt},
         stream=True
     )
 
     fixed_code = ""
+
     for line in response.iter_lines():
-        if line:
-            fixed_code += json.loads(line.decode())["response"]
+        if not line:
+            continue
+
+        data = json.loads(line.decode())
+
+        # ignore metadata
+        if "response" in data:
+            fixed_code += data["response"]
+
+    # Strip out hallucinated junk
+    fixed_code = fixed_code.replace("end", "0")
+    fixed_code = fixed_code.replace("return end", "return 0;")
 
     return {
         "errors": [{"line": 0, "message": e, "severity": "ERROR", "code": "C001"} for e in errors],
         "warnings": [],
-        "hint": "Fix the C syntax errors shown above before compilation.",
-        "solution":"""
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-
-int main() {
-    // corrected template
-}
-""",
-        "additional_tips": (
-            "- Every statement must end with a semicolon\n"
-            "- All opened braces must be closed\n"
-            "- Ensure required headers are included"
-        )
+        "hint": "Correct the syntax errors shown above.",
+        "solution": fixed_code.strip(),
+        "additional_tips": "- End statements with ;\n- Ensure braces match"
     }

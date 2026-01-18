@@ -1,13 +1,36 @@
 import requests
 import json
+import os
 
-def review_with_llm(code: str):
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
+
+
+def static_cpp_errors(code: str):
     errors = []
-    if "using namespace std" in code and "#include<iostream>" not in code:
-        errors.append("Missing <iostream> include")
 
+    # Require main()
     if "main(" not in code:
         errors.append("Missing main() function")
+
+    # Require iostream if using namespace std
+    if "using namespace std" in code and "#include<iostream>" not in code:
+        errors.append("Missing #include <iostream>")
+
+    # Basic missing semicolon check
+    for i, line in enumerate(code.splitlines()):
+        stripped = line.strip()
+        if stripped and not stripped.endswith(";") and not stripped.endswith("{") and not stripped.endswith("}") and not stripped.startswith("#"):
+            errors.append(f"Line {i+1}: Missing semicolon")
+
+    # Check braces balance
+    if code.count("{") != code.count("}"):
+        errors.append("Mismatched braces")
+
+    return errors
+
+
+def review_with_llm(code: str):
+    errors = static_cpp_errors(code)
 
     if not errors:
         return {
@@ -17,32 +40,71 @@ def review_with_llm(code: str):
             "solution": "",
             "additional_tips": ""
         }
-
+    error_block = "\n".join(errors)
     prompt = f"""
-Fix ALL C++ errors and return a corrected program.
+Act as a senior C++ compiler expert.
+
+Your job is to fix ONLY syntax errors.
+
+STRICT RULES:
+- Do NOT modify logic
+- Do NOT add comments
+- Do NOT create new code
+- Do NOT optimize
+- Only correct syntax mistakes
+- Return ONLY valid C++ code
 
 Errors:
-{chr(10).join(errors)}
+{error_block}
 
 Code:
 {code}
+
+Return ONLY corrected C++ code.
 """
 
+    # Call Ollama safely
     response = requests.post(
-        "http://localhost:11434/api/generate",
-        json={"model": "phi", "prompt": prompt, "options": {"temperature": 0}},
+        f"{OLLAMA_URL}/api/generate",
+        json={"model": "phi3:latest", "prompt": prompt, "options": {"temperature": 0}},
         stream=True
     )
 
     fixed_code = ""
-    for line in response.iter_lines():
-        if line:
-            fixed_code += json.loads(line.decode())["response"]
 
+    # SAFE STREAM PROCESSING
+    for line in response.iter_lines():
+        if not line:
+            continue
+
+        data = json.loads(line.decode())
+
+        # Normal model output
+        if "response" in data:
+            fixed_code += data["response"]
+
+        # Handle Ollama error
+        if "error" in data:
+            return {
+                "errors": [
+                    {
+                        "line": 0,
+                        "message": data["error"],
+                        "severity": "ERROR",
+                        "code": "LLM001"
+                    }
+                ],
+                "warnings": [],
+                "hint": "Ollama returned an error.",
+                "solution": "",
+                "additional_tips": "Run: docker exec -it ollama ollama pull phi3"
+            }
+
+    # Final response structure
     return {
         "errors": [{"line": 0, "message": e, "severity": "ERROR", "code": "CPP001"} for e in errors],
         "warnings": [],
         "hint": "Fix the C++ syntax issues shown above.",
-        "solution": fixed_code,
-        "additional_tips": "- Include correct headers\n- Use std namespace properly"
+        "solution": fixed_code.strip(),
+        "additional_tips": "- Include correct headers\n- Ensure proper semicolons and braces"
     }

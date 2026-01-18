@@ -76,7 +76,7 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 ollama pull phi
 
-###push to git
+### push to git
 
 1.Check git status
 git status
@@ -97,7 +97,7 @@ git push origin master
 
 
 
-FIRST TIME PUSH (repo exists but not linked)
+##### FIRST TIME PUSH (repo exists but not linked)
 🔹 Step 1: Initialize git (if needed)
 git init
 
@@ -117,3 +117,201 @@ git add .
 git commit -m "Initial commit"
 git branch -M main
 git push -u origin main
+
+
+
+##### If you change FRONTEND code (React)
+
+Then run:
+
+docker-compose build frontend
+docker-compose up -d
+
+
+OR rebuild only frontend:
+
+docker-compose up --build frontend -d
+
+
+#### If you change BACKEND code (FastAPI)
+
+Then run:
+docker-compose build backend
+docker-compose up -d
+
+
+OR rebuild only backend:
+
+docker-compose up --build backend -d
+
+
+#### If you change docker-compose.yml
+
+Then ALWAYS do:
+docker-compose down
+docker-compose up --build -d
+
+
+Because changes to docker-compose require full restart.
+
+
+#### If you change Dockerfile
+
+Example changes:
+
+Changed Python version
+
+Added dependencies
+
+Updated COPY commands
+
+Then do:
+docker-compose build --no-cache
+docker-compose up -d
+
+
+#### If you forget which service to rebuild, you can always safely do:
+
+docker-compose up --build -d
+
+
+This will:
+
+rebuild modified services only
+
+restart containers automatically
+
+without touching volumes
+
+
+
+#### HOW TO USE YOUR AI BUG FINDER WEBSITE
+
+⭐ Step 1 — Start all containers
+
+Before using the website, run:
+
+docker compose up -d
+
+
+This starts:
+
+Ollama (LLM model)
+
+Backend (FastAPI)
+
+Frontend (React + Nginx)
+
+⭐ Step 2 — Wait 20 seconds
+
+Ollama takes time to load the model inside the container.
+
+Backend also needs a few seconds to connect to Ollama.
+
+If you use it too quickly, you get errors like:
+
+Unexpected token I
+Internal Server Error
+KeyError: response
+
+⭐ Step 3 — Open the website in browser
+
+Go to:
+
+http://localhost
+
+
+This is your frontend UI.
+
+Not:
+
+❌ localhost:80/analyze
+❌ localhost:8000
+❌ 0.0.0.0
+
+Just:
+
+http://localhost
+
+⭐ Step 4 — Write or paste code
+
+Inside the Monaco editor:
+
+Choose Python / C / C++ / Java / JS
+
+Paste your code or type it
+
+⭐ Step 5 — Click “Analyze”
+
+The UI will:
+
+1️⃣ Send request to:
+
+POST /api/analyze
+
+
+2️⃣ Frontend automatically forwards to backend:
+
+http://localhost:8000/analyze
+
+
+3️⃣ Backend sends to Ollama:
+
+http://ollama:11434/api/generate
+
+
+4️⃣ Ollama returns fixed code
+
+5️⃣ Frontend shows results
+
+⭐ Step 6 — Check results
+
+The UI displays:
+
+❌ Errors
+
+⚠️ Warnings
+
+💡 Hints
+
+✅ Solution
+
+📌 Additional Tips
+
+⭐ Step 7 — If something breaks
+🔍 Check backend logs:
+docker logs bugfinder-backend
+
+🔍 Check Ollama logs:
+docker logs ollama
+
+
+If you see:
+
+404 /api/generate
+
+
+It means the model is not pulled yet (run ollama pull).
+
+⭐ Step 8 — Stop the website
+
+When done:
+
+docker compose down
+
+
+
+#####Simplest workflow for daily use
+
+Whenever you want to use your AI Bug Finder app:
+
+✔ Step 1:
+
+docker compose up -d
+
+
+✔ Step 2:
+Open browser
+
+http://localhost
+    

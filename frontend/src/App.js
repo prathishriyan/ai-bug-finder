@@ -86,6 +86,12 @@ function App() {
 
     const code = editorRef.current?.getValue() || "";
 
+     if (!code) {
+    alert("Code editor is empty. Please enter some code.");
+    setLoading(false);
+    return;
+  }
+  
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
