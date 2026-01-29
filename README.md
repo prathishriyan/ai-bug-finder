@@ -97,3 +97,13 @@ Please select the correct language (CPP) before analysis.
 
 ## 🚀 Future Enhancements
 
+•	Add support for more programming languages
+•	Integrate additional LLM models (Mistral, LLaMA, DeepSeek)
+•	Implement severity levels (Low, Medium, High)
+•	Line-by-line error highlighting
+•	IDE plugin integration
+•	Cloud-hosted version
+•	Offline batch code analysis
+•	User authentication and history tracking
+
+
